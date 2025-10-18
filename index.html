@@ -14,6 +14,97 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
             background: #0f172a;
             color: #fff;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        body.light-mode {
+            background: #f9fafb;
+            color: #000;
+        }
+        body.light-mode header {
+            background: #f3f4f6;
+            border-bottom-color: #e5e7eb;
+        }
+        body.light-mode h1 {
+            color: #0891b2;
+        }
+        body.light-mode .subtitle {
+            color: #666;
+        }
+        body.light-mode .upload-area {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        body.light-mode .upload-area:hover {
+            background: #e5e7eb;
+            border-color: #0891b2;
+        }
+        body.light-mode .results {
+            background: #ffffff;
+            border-color: #e5e7eb;
+        }
+        body.light-mode .stat-box {
+            background: #f3f4f6;
+            border-color: #e5e7eb;
+        }
+        body.light-mode .ranking-item {
+            background: #f3f4f6;
+        }
+        body.light-mode .rec-box {
+            background: #f3f4f6;
+        }
+        body.light-mode .file-item {
+            background: #f3f4f6;
+            border-left-color: #0891b2;
+        }
+        body.light-mode button.back {
+            background: #d1d5db;
+            color: #000;
+        }
+        body.light-mode button.back:hover {
+            background: #9ca3af;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+            background: #334155;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            border: none;
+            padding: 0;
+        }
+        .toggle-switch.active {
+            background: #fbbf24;
+        }
+        .toggle-switch::before {
+            content: '';
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #fff;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        .toggle-switch.active::before {
+            transform: translateX(30px);
+        }
+        .toggle-switch::after {
+            content: '🌙';
+            position: absolute;
+            left: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+            transition: opacity 0.3s ease;
+        }
+        .toggle-switch.active::after {
+            content: '☀️';
+            opacity: 0;
         }
         .container {
             max-width: 1200px;
@@ -93,6 +184,12 @@
             width: 100%;
             padding: 15px;
             margin-top: 20px;
+        }
+        button.download {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            width: 100%;
+            padding: 15px;
+            margin-top: 10px;
         }
         .results {
             background: #1e293b;
@@ -209,8 +306,13 @@
 </head>
 <body>
     <header>
-        <h1>⚛️ Quantum Resistance Checker</h1>
-        <p class="subtitle">Analyze encrypted files for quantum vulnerability</p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h1>⚛️ Quantum Resistance Checker</h1>
+                <p class="subtitle">Analyze encrypted files for quantum vulnerability</p>
+            </div>
+            <button id="themeToggle" class="toggle-switch" onclick="toggleTheme()"></button>
+        </div>
     </header>
 
     <div class="container" id="app"></div>
@@ -270,9 +372,22 @@
         let files = [];
         let results = [];
         let showResults = false;
-        let showRecommendations = false;
-        let currentViewMode = 'results'; // 'results' or 'recommendations'
+        let currentViewMode = 'results';
         let analysisMode = 'single';
+        let darkMode = true;
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            const button = document.getElementById('themeToggle');
+            
+            if (darkMode) {
+                document.body.classList.remove('light-mode');
+                button.classList.remove('active');
+            } else {
+                document.body.classList.add('light-mode');
+                button.classList.add('active');
+            }
+        }
 
         function analyzeFile(fileName) {
             const ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
@@ -348,6 +463,160 @@
             render();
         }
 
+        function downloadResults() {
+            let content = '';
+            const timestamp = new Date().toLocaleString();
+
+            if (results.length === 1) {
+                const result = results[0];
+                const rec = getRecommendations(result.algorithm);
+                content = `QUANTUM RESISTANCE CHECKER - ANALYSIS REPORT
+Generated: ${timestamp}
+
+===============================================================================
+
+FILE INFORMATION:
+  File Name: ${result.fileName}
+  File Type: ${result.extension}
+  Algorithm: ${result.algorithm}
+
+QUANTUM VULNERABILITY ASSESSMENT:
+
+  Overall Score: ${result.score}/100
+  Risk Level: ${result.risk}
+  Quantum Safe: ${result.quantumSafe ? 'YES' : 'NO'}
+
+SCORE BREAKDOWN:
+  
+  Algorithm Score:   ${result.algorithmScore}/30
+  Key Length Score:  ${result.keyLengthScore}/40
+  File Type Score:   ${result.fileTypeScore}/20
+  Entropy Score:     ${result.entropyScore}/10
+
+RISK ASSESSMENT:
+
+${result.score >= 80 ? '  GREEN - LOW RISK - Excellent quantum resistance' :
+  result.score >= 60 ? '  YELLOW - MEDIUM RISK - Good quantum resistance' :
+  result.score >= 40 ? '  ORANGE - HIGH RISK - Vulnerable to quantum attacks' :
+  '  RED - CRITICAL RISK - Very vulnerable to quantum attacks'}
+
+RECOMMENDATIONS:
+
+  Risk Level: ${rec.risk}
+  Issue: ${rec.issue}
+  
+  Why It Matters:
+  ${rec.why}
+  
+  What You Should Do:
+  ${rec.recommendation}
+  
+  Action Steps:
+${rec.steps.map((step, i) => `  ${i + 1}. ${step}`).join('\n')}
+
+===============================================================================
+
+POST-QUANTUM CRYPTOGRAPHY OPTIONS:
+
+KYBER (Key Encapsulation)
+  - NIST Standardized (2022)
+  - Based on lattice problems
+  - Fast and secure
+  - Recommended for key exchange
+
+DILITHIUM (Digital Signatures)
+  - NIST Standardized (2022)
+  - Based on lattice problems
+  - Secure signature algorithm
+  - Recommended for authentication
+
+===============================================================================
+
+Report generated by Quantum Resistance Checker
+GitHub: https://github.com/YourUsername/QuantumResistanceChecker
+`;
+            } else {
+                const sorted = [...results].sort((a, b) => b.score - a.score);
+                const avgScore = (sorted.reduce((sum, r) => sum + r.score, 0) / sorted.length).toFixed(1);
+                
+                content = `QUANTUM RESISTANCE CHECKER - BATCH ANALYSIS REPORT
+Generated: ${timestamp}
+
+===============================================================================
+
+PORTFOLIO SUMMARY:
+
+  Total Files Analyzed: ${results.length}
+  Average Score: ${avgScore}/100
+  Best Score: ${sorted[0].score}/100 (${sorted[0].fileName})
+  Worst Score: ${sorted[sorted.length-1].score}/100 (${sorted[sorted.length-1].fileName})
+
+RISK DISTRIBUTION:
+
+  RED - Critical Risk (< 40): ${results.filter(r => r.score < 40).length} files
+  ORANGE - High Risk (40-60): ${results.filter(r => r.score >= 40 && r.score < 60).length} files
+  YELLOW - Medium Risk (60-80): ${results.filter(r => r.score >= 60 && r.score < 80).length} files
+  GREEN - Low Risk (> 80): ${results.filter(r => r.score >= 80).length} files
+
+===============================================================================
+
+DETAILED SECURITY RANKING:
+
+`;
+                sorted.forEach((result, idx) => {
+                    content += `\n${idx + 1}. ${result.fileName}\n`;
+                    content += `   Algorithm: ${result.algorithm}\n`;
+                    content += `   Score: ${result.score}/100\n`;
+                    content += `   Risk Level: ${result.risk}\n`;
+                    content += `   Quantum Safe: ${result.quantumSafe ? 'YES' : 'NO'}\n`;
+                });
+
+                content += `\n===============================================================================
+
+MIGRATION STRATEGY (4 PHASES):
+
+PHASE 1 (NOW) - AUDIT & IDENTIFY
+  - Audit all systems using RSA/ECC
+  - Identify critical files
+  - Document encryption methods
+  - Create inventory
+
+PHASE 2 (6 MONTHS) - EVALUATE & PILOT
+  - Evaluate post-quantum options
+  - Pilot Kyber implementation
+  - Test compatibility
+  - Train technical team
+
+PHASE 3 (12-24 MONTHS) - DEPLOY
+  - Update cryptographic libraries
+  - Deploy to systems
+  - Monitor issues
+  - Migrate gradually
+
+PHASE 4 (24+ MONTHS) - COMPLETE
+  - Complete migration
+  - Phase out legacy systems
+  - Security audits
+  - Stay updated
+
+===============================================================================
+
+Report generated by Quantum Resistance Checker
+GitHub: https://github.com/YourUsername/QuantumResistanceChecker
+`;
+            }
+
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+            element.setAttribute('download', `quantum_analysis_${new Date().getTime()}.txt`);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+
+            alert('Report downloaded successfully!');
+        }
+
         function render() {
             const app = document.getElementById('app');
 
@@ -380,72 +649,6 @@
                                 <ol style="margin-left: 20px; color: #ccc;">
                                     ${rec.steps.map(step => `<li style="margin: 8px 0;">${step}</li>`).join('')}
                                 </ol>
-                            </div>
-
-                            <div class="rec-box">
-                                <div class="rec-title">Post-Quantum Alternatives</div>
-                                <p>🔹 <strong>KYBER</strong> - Key Encapsulation (NIST Standardized)</p>
-                                <p>🔹 <strong>DILITHIUM</strong> - Digital Signatures (NIST Standardized)</p>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // Multiple files recommendations
-                    const criticalFiles = results.filter(r => r.score < 40);
-                    const highRiskFiles = results.filter(r => r.score >= 40 && r.score < 60);
-                    const secureFiles = results.filter(r => r.score >= 60);
-
-                    app.innerHTML = `
-                        <button class="back" onclick="hideRecs()">← Back to Results</button>
-                        <div class="results">
-                            <h2 style="margin-bottom: 20px;">💡 Portfolio Recommendations</h2>
-                            
-                            <div class="rec-box">
-                                <div class="rec-title">📊 Overview</div>
-                                <p>🔴 Critical Files (Score < 40): ${criticalFiles.length}</p>
-                                <p>🟠 High Risk Files (Score 40-60): ${highRiskFiles.length}</p>
-                                <p>🟢 Secure Files (Score > 60): ${secureFiles.length}</p>
-                            </div>
-
-                            ${criticalFiles.length > 0 ? `
-                                <div class="rec-box">
-                                    <div class="rec-title">🔴 CRITICAL - Immediate Action Required</div>
-                                    <p style="color: #ef4444;">These files use vulnerable encryption algorithms:</p>
-                                    <ul style="margin-left: 20px; margin-top: 10px;">
-                                        ${criticalFiles.map(f => `<li>${f.fileName} (${f.algorithm}) - Score: ${f.score}/100</li>`).join('')}
-                                    </ul>
-                                    <p style="margin-top: 15px; color: #fbbf24;"><strong>Action: Migrate to post-quantum cryptography (Kyber, Dilithium) within 1-2 years</strong></p>
-                                </div>
-                            ` : ''}
-
-                            ${highRiskFiles.length > 0 ? `
-                                <div class="rec-box">
-                                    <div class="rec-title">🟠 HIGH RISK - Plan Migration</div>
-                                    <p style="color: #f97316;">These files should be upgraded within 2-3 years:</p>
-                                    <ul style="margin-left: 20px; margin-top: 10px;">
-                                        ${highRiskFiles.map(f => `<li>${f.fileName} (${f.algorithm}) - Score: ${f.score}/100</li>`).join('')}
-                                    </ul>
-                                    <p style="margin-top: 15px;"><strong>Action: Plan and schedule migration to post-quantum algorithms</strong></p>
-                                </div>
-                            ` : ''}
-
-                            ${secureFiles.length > 0 ? `
-                                <div class="rec-box">
-                                    <div class="rec-title">🟢 SECURE - Well Protected</div>
-                                    <p style="color: #22c55e;">These files have good quantum resistance:</p>
-                                    <ul style="margin-left: 20px; margin-top: 10px;">
-                                        ${secureFiles.map(f => `<li>${f.fileName} (${f.algorithm}) - Score: ${f.score}/100</li>`).join('')}
-                                    </ul>
-                                    <p style="margin-top: 15px;"><strong>Action: Maintain current setup and keep libraries updated</strong></p>
-                                </div>
-                            ` : ''}
-
-                            <div class="rec-box">
-                                <div class="rec-title">📋 Migration Strategy</div>
-                                <p><strong>Phase 1 (Now):</strong> Audit all systems and identify vulnerable algorithms</p>
-                                <p><strong>Phase 2 (6 months):</strong> Pilot post-quantum implementations</p>
-                                <p><strong>Phase 3 (12-24 months):</strong> Gradual rollout to production</p>
-                                <p><strong>Phase 4 (24+ months):</strong> Complete migration and phase out legacy systems</p>
                             </div>
                         </div>
                     `;
@@ -480,7 +683,7 @@
                                 <div class="stat-box">
                                     <div class="stat-label">Quantum Safe</div>
                                     <div style="color: ${result.quantumSafe ? '#22c55e' : '#ef4444'}; font-size: 1rem;">
-                                        ${result.quantumSafe ? 'YES ✓' : 'NO ✗'}
+                                        ${result.quantumSafe ? 'YES' : 'NO'}
                                     </div>
                                 </div>
                                 <div class="stat-box">
@@ -518,6 +721,7 @@
                             </div>
 
                             <button class="recommend" onclick="showRecs()">💡 View Recommendations</button>
+                            <button class="download" onclick="downloadResults()">⬇️ Download Report</button>
                         </div>
                     `;
                 } else {
@@ -569,6 +773,7 @@
                             </div>
 
                             <button class="recommend" onclick="showRecs()">💡 View Portfolio Recommendations</button>
+                            <button class="download" onclick="downloadResults()">⬇️ Download Report</button>
                         </div>
                     `;
                 }

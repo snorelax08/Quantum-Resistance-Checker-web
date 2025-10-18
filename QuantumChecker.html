@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Resistance Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #0f172a;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+            padding: 30px 20px;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+        }
+        .upload-area {
+            border: 2px dashed #475569;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            margin: 30px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #1e293b;
+        }
+        .upload-area:hover {
+            border-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.05);
+        }
+        .upload-area h3 {
+            margin: 15px 0 10px 0;
+            font-size: 1.3rem;
+        }
+        .upload-area p {
+            color: #888;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        button {
+            background: linear-gradient(135deg, #00d4ff 0%, #0084ff 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 212, 255, 0.3);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        button.back {
+            background: #334155;
+            width: auto;
+        }
+        button.analyze {
+            width: 100%;
+            padding: 20px;
+            font-size: 1.1rem;
+        }
+        button.recommend {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .results {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+        .file-list {
+            list-style: none;
+            margin: 20px 0;
+        }
+        .file-item {
+            background: #0f172a;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 3px solid #00d4ff;
+        }
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #00d4ff;
+        }
+        .risk-badge {
+            display: inline-block;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .risk-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid #dc2626;
+        }
+        .risk-high {
+            background: rgba(249, 115, 22, 0.2);
+            color: #f97316;
+            border: 1px solid #ea580c;
+        }
+        .risk-medium {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+            border: 1px solid #ca8a04;
+        }
+        .risk-low {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid #16a34a;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #334155;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .stat-box {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+        .stat-label {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+        .ranking {
+            display: grid;
+            gap: 10px;
+        }
+        .ranking-item {
+            background: #0f172a;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 3px solid #00d4ff;
+        }
+        .rec-box {
+            background: #0f172a;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 3px solid #fbbf24;
+        }
+        .rec-title {
+            font-weight: bold;
+            color: #fbbf24;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⚛️ Quantum Resistance Checker</h1>
+        <p class="subtitle">Analyze encrypted files for quantum vulnerability</p>
+    </header>
+
+    <div class="container" id="app"></div>
+
+    <script>
+        const algorithmDatabase = {
+            '.gpg': { algorithm: 'RSA/PGP', quantumSafe: false, risk: 'CRITICAL', score: 41 },
+            '.pgp': { algorithm: 'RSA/PGP', quantumSafe: false, risk: 'CRITICAL', score: 41 },
+            '.zip': { algorithm: 'AES', quantumSafe: true, risk: 'LOW', score: 61 },
+            '.7z': { algorithm: 'AES-256', quantumSafe: true, risk: 'LOW', score: 70 },
+            '.rar': { algorithm: 'AES', quantumSafe: true, risk: 'LOW', score: 60 },
+            '.key': { algorithm: 'RSA/ECC', quantumSafe: false, risk: 'CRITICAL', score: 28 },
+            '.pem': { algorithm: 'RSA/ECC', quantumSafe: false, risk: 'HIGH', score: 28 },
+            '.kyber': { algorithm: 'Kyber (Lattice)', quantumSafe: true, risk: 'LOW', score: 95 },
+            '.docx': { algorithm: 'AES-256', quantumSafe: true, risk: 'LOW', score: 75 },
+            '.xlsx': { algorithm: 'AES-256', quantumSafe: true, risk: 'LOW', score: 75 },
+        };
+
+        const recommendations = {
+            'RSA/PGP': {
+                risk: 'CRITICAL',
+                issue: 'RSA encryption is vulnerable to quantum computer attacks',
+                why: 'Quantum computers can use Shor\'s algorithm to break RSA in seconds',
+                recommendation: 'Migrate to post-quantum cryptography IMMEDIATELY',
+                steps: ['Audit all systems using RSA', 'Evaluate post-quantum options (Kyber)', 'Plan gradual migration', 'Update cryptographic libraries', 'Test thoroughly']
+            },
+            'RSA/ECC': {
+                risk: 'HIGH',
+                issue: 'Elliptic Curve Cryptography is vulnerable to quantum attacks',
+                why: 'Quantum computers can break ECC faster than RSA',
+                recommendation: 'Plan migration to post-quantum algorithms',
+                steps: ['Assess current ECC implementation', 'Test post-quantum alternatives', 'Plan upgrade timeline', 'Update systems gradually']
+            },
+            'AES': {
+                risk: 'LOW',
+                issue: 'AES is quantum-safe ✓',
+                why: 'AES-256 requires 2^128 operations even with quantum computers',
+                recommendation: 'No action needed - continue using AES',
+                steps: ['Maintain current setup', 'Keep libraries updated', 'Regular security audits']
+            },
+            'AES-256': {
+                risk: 'LOW',
+                issue: 'AES-256 is quantum-safe ✓',
+                why: 'Strong encryption remains secure against quantum computers',
+                recommendation: 'Excellent security - maintain current setup',
+                steps: ['Maintain current implementation', 'Keep libraries updated']
+            },
+            'Kyber (Lattice)': {
+                risk: 'LOW',
+                issue: 'Kyber is quantum-safe ✓',
+                why: 'NIST-standardized post-quantum algorithm based on lattice problems',
+                recommendation: 'Excellent choice - no changes needed',
+                steps: ['Already using best practice', 'Keep libraries updated']
+            }
+        };
+
+        let files = [];
+        let results = [];
+        let showResults = false;
+        let showRecommendations = false;
+        let currentViewMode = 'results'; // 'results' or 'recommendations'
+        let analysisMode = 'single';
+
+        function analyzeFile(fileName) {
+            const ext = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+            const fileInfo = algorithmDatabase[ext] || {
+                algorithm: 'Unknown',
+                quantumSafe: null,
+                risk: 'UNKNOWN',
+                score: 50
+            };
+
+            return {
+                fileName,
+                extension: ext,
+                ...fileInfo,
+                algorithmScore: fileInfo.score > 60 ? 28 : 8,
+                keyLengthScore: fileInfo.score > 60 ? 25 : 10,
+                fileTypeScore: fileInfo.score > 60 ? 18 : 10,
+                entropyScore: 5,
+            };
+        }
+
+        function getRiskClass(score) {
+            if (score >= 80) return 'risk-low';
+            if (score >= 60) return 'risk-medium';
+            if (score >= 40) return 'risk-high';
+            return 'risk-critical';
+        }
+
+        function getRiskEmoji(score) {
+            if (score >= 80) return '🟢';
+            if (score >= 60) return '🟡';
+            if (score >= 40) return '🟠';
+            return '🔴';
+        }
+
+        function getRecommendations(algorithm) {
+            return recommendations[algorithm] || {
+                risk: 'UNKNOWN',
+                issue: 'Encryption algorithm cannot be determined',
+                why: 'File type not recognized',
+                recommendation: 'Verify encryption method',
+                steps: ['Check file documentation', 'Verify encryption type']
+            };
+        }
+
+        function handleFileUpload(e) {
+            files = Array.from(e.target.files);
+            render();
+        }
+
+        function handleAnalyze() {
+            if (files.length === 0) return;
+            results = files.map(file => analyzeFile(file.name));
+            showResults = true;
+            currentViewMode = 'results';
+            render();
+        }
+
+        function handleBack() {
+            showResults = false;
+            files = [];
+            currentViewMode = 'results';
+            render();
+        }
+
+        function showRecs() {
+            currentViewMode = 'recommendations';
+            render();
+        }
+
+        function hideRecs() {
+            currentViewMode = 'results';
+            render();
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+
+            if (showResults && currentViewMode === 'recommendations') {
+                // RECOMMENDATIONS VIEW
+                if (results.length === 1) {
+                    const rec = getRecommendations(results[0].algorithm);
+                    app.innerHTML = `
+                        <button class="back" onclick="hideRecs()">← Back to Results</button>
+                        <div class="results">
+                            <h2 style="margin-bottom: 20px;">💡 Recommendations for ${results[0].fileName}</h2>
+                            
+                            <div class="rec-box">
+                                <div class="rec-title">Risk Level: ${rec.risk}</div>
+                                <p>${rec.issue}</p>
+                            </div>
+
+                            <div class="rec-box">
+                                <div class="rec-title">Why This Matters</div>
+                                <p>${rec.why}</p>
+                            </div>
+
+                            <div class="rec-box" style="border-left: 3px solid #00d4ff;">
+                                <div class="rec-title" style="color: #00d4ff;">What You Should Do</div>
+                                <p style="font-size: 1.1rem; color: #00d4ff;">${rec.recommendation}</p>
+                            </div>
+
+                            <div class="rec-box">
+                                <div class="rec-title">Action Steps</div>
+                                <ol style="margin-left: 20px; color: #ccc;">
+                                    ${rec.steps.map(step => `<li style="margin: 8px 0;">${step}</li>`).join('')}
+                                </ol>
+                            </div>
+
+                            <div class="rec-box">
+                                <div class="rec-title">Post-Quantum Alternatives</div>
+                                <p>🔹 <strong>KYBER</strong> - Key Encapsulation (NIST Standardized)</p>
+                                <p>🔹 <strong>DILITHIUM</strong> - Digital Signatures (NIST Standardized)</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Multiple files recommendations
+                    const criticalFiles = results.filter(r => r.score < 40);
+                    const highRiskFiles = results.filter(r => r.score >= 40 && r.score < 60);
+                    const secureFiles = results.filter(r => r.score >= 60);
+
+                    app.innerHTML = `
+                        <button class="back" onclick="hideRecs()">← Back to Results</button>
+                        <div class="results">
+                            <h2 style="margin-bottom: 20px;">💡 Portfolio Recommendations</h2>
+                            
+                            <div class="rec-box">
+                                <div class="rec-title">📊 Overview</div>
+                                <p>🔴 Critical Files (Score < 40): ${criticalFiles.length}</p>
+                                <p>🟠 High Risk Files (Score 40-60): ${highRiskFiles.length}</p>
+                                <p>🟢 Secure Files (Score > 60): ${secureFiles.length}</p>
+                            </div>
+
+                            ${criticalFiles.length > 0 ? `
+                                <div class="rec-box">
+                                    <div class="rec-title">🔴 CRITICAL - Immediate Action Required</div>
+                                    <p style="color: #ef4444;">These files use vulnerable encryption algorithms:</p>
+                                    <ul style="margin-left: 20px; margin-top: 10px;">
+                                        ${criticalFiles.map(f => `<li>${f.fileName} (${f.algorithm}) - Score: ${f.score}/100</li>`).join('')}
+                                    </ul>
+                                    <p style="margin-top: 15px; color: #fbbf24;"><strong>Action: Migrate to post-quantum cryptography (Kyber, Dilithium) within 1-2 years</strong></p>
+                                </div>
+                            ` : ''}
+
+                            ${highRiskFiles.length > 0 ? `
+                                <div class="rec-box">
+                                    <div class="rec-title">🟠 HIGH RISK - Plan Migration</div>
+                                    <p style="color: #f97316;">These files should be upgraded within 2-3 years:</p>
+                                    <ul style="margin-left: 20px; margin-top: 10px;">
+                                        ${highRiskFiles.map(f => `<li>${f.fileName} (${f.algorithm}) - Score: ${f.score}/100</li>`).join('')}
+                                    </ul>
+                                    <p style="margin-top: 15px;"><strong>Action: Plan and schedule migration to post-quantum algorithms</strong></p>
+                                </div>
+                            ` : ''}
+
+                            ${secureFiles.length > 0 ? `
+                                <div class="rec-box">
+                                    <div class="rec-title">🟢 SECURE - Well Protected</div>
+                                    <p style="color: #22c55e;">These files have good quantum resistance:</p>
+                                    <ul style="margin-left: 20px; margin-top: 10px;">
+                                        ${secureFiles.map(f => `<li>${f.fileName} (${f.algorithm}) - Score: ${f.score}/100</li>`).join('')}
+                                    </ul>
+                                    <p style="margin-top: 15px;"><strong>Action: Maintain current setup and keep libraries updated</strong></p>
+                                </div>
+                            ` : ''}
+
+                            <div class="rec-box">
+                                <div class="rec-title">📋 Migration Strategy</div>
+                                <p><strong>Phase 1 (Now):</strong> Audit all systems and identify vulnerable algorithms</p>
+                                <p><strong>Phase 2 (6 months):</strong> Pilot post-quantum implementations</p>
+                                <p><strong>Phase 3 (12-24 months):</strong> Gradual rollout to production</p>
+                                <p><strong>Phase 4 (24+ months):</strong> Complete migration and phase out legacy systems</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else if (showResults) {
+                // RESULTS VIEW
+                if (results.length === 1) {
+                    const result = results[0];
+                    app.innerHTML = `
+                        <button class="back" onclick="handleBack()">← Back</button>
+                        <div class="results">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                <h2>${getRiskEmoji(result.score)} Analysis Result</h2>
+                                <div class="score-display">${result.score}/100</div>
+                            </div>
+                            <div class="risk-badge ${getRiskClass(result.score)}">
+                                ${result.score >= 80 ? 'LOW RISK' :
+                                  result.score >= 60 ? 'MEDIUM RISK' :
+                                  result.score >= 40 ? 'HIGH RISK' :
+                                  'CRITICAL RISK'}
+                            </div>
+                            
+                            <div class="grid">
+                                <div class="stat-box">
+                                    <div class="stat-label">File Name</div>
+                                    <div style="color: #00d4ff; font-size: 1rem;">${result.fileName}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Algorithm</div>
+                                    <div style="color: #00d4ff; font-size: 1rem;">${result.algorithm}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Quantum Safe</div>
+                                    <div style="color: ${result.quantumSafe ? '#22c55e' : '#ef4444'}; font-size: 1rem;">
+                                        ${result.quantumSafe ? 'YES ✓' : 'NO ✗'}
+                                    </div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Risk Level</div>
+                                    <div style="color: #00d4ff; font-size: 1rem;">${result.risk}</div>
+                                </div>
+                            </div>
+
+                            <h3 style="margin-top: 30px; margin-bottom: 20px;">Score Breakdown</h3>
+                            <div>
+                                <div style="margin-bottom: 15px;">
+                                    <span>Algorithm Score: ${result.algorithmScore}/30</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${(result.algorithmScore/30)*100}%; background-color: #00d4ff;"></div>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <span>Key Length Score: ${result.keyLengthScore}/40</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${(result.keyLengthScore/40)*100}%; background-color: #00d4ff;"></div>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <span>File Type Score: ${result.fileTypeScore}/20</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${(result.fileTypeScore/20)*100}%; background-color: #00d4ff;"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span>Entropy Score: ${result.entropyScore}/10</span>
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" style="width: ${(result.entropyScore/10)*100}%; background-color: #00d4ff;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="recommend" onclick="showRecs()">💡 View Recommendations</button>
+                        </div>
+                    `;
+                } else {
+                    const sorted = [...results].sort((a, b) => b.score - a.score);
+                    const avgScore = (sorted.reduce((sum, r) => sum + r.score, 0) / sorted.length).toFixed(1);
+
+                    let rankingHtml = '';
+                    sorted.forEach((result, idx) => {
+                        rankingHtml += `
+                            <div class="ranking-item">
+                                <div>
+                                    <div style="font-weight: bold;">${idx + 1}. ${result.fileName}</div>
+                                    <div style="font-size: 0.875rem; color: #888;">${result.algorithm}</div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <span style="font-size: 1.5rem;">${getRiskEmoji(result.score)}</span>
+                                    <span style="font-weight: bold; font-size: 1.1rem;">${result.score}/100</span>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    app.innerHTML = `
+                        <button class="back" onclick="handleBack()">← Back</button>
+                        <div class="results">
+                            <h2 style="margin-bottom: 20px;">📊 Comparison Analysis</h2>
+                            <div class="grid">
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Files</div>
+                                    <div class="stat-value">${results.length}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Average Score</div>
+                                    <div class="stat-value">${avgScore}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Best Score</div>
+                                    <div class="stat-value" style="color: #22c55e;">${sorted[0].score}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Worst Score</div>
+                                    <div class="stat-value" style="color: #ef4444;">${sorted[sorted.length-1].score}</div>
+                                </div>
+                            </div>
+
+                            <h3 style="margin-top: 30px; margin-bottom: 20px;">Security Ranking</h3>
+                            <div class="ranking">
+                                ${rankingHtml}
+                            </div>
+
+                            <button class="recommend" onclick="showRecs()">💡 View Portfolio Recommendations</button>
+                        </div>
+                    `;
+                }
+            } else {
+                app.innerHTML = `
+                    <div style="margin-bottom: 30px; display: flex; gap: 15px;">
+                        <button onclick="setMode('single')" style="background: ${analysisMode === 'single' ? '#06b6d4' : '#334155'}; width: auto;">Single File</button>
+                        <button onclick="setMode('multiple')" style="background: ${analysisMode === 'multiple' ? '#a855f7' : '#334155'}; width: auto;">Multiple Files</button>
+                    </div>
+
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <h3>📁 Upload Encrypted Files</h3>
+                        <p>Click to select files or drag and drop</p>
+                        <input type="file" id="fileInput" ${analysisMode === 'multiple' ? 'multiple' : ''} onchange="handleFileUpload(event)">
+                    </div>
+
+                    ${files.length > 0 ? `
+                        <div class="results">
+                            <h3>Selected Files (${files.length})</h3>
+                            <ul class="file-list">
+                                ${files.map(file => `<li class="file-item">📄 ${file.name}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    <button class="analyze" onclick="handleAnalyze()" ${files.length === 0 ? 'disabled' : ''}>
+                        🔍 Analyze ${files.length > 0 ? files.length + ' File(s)' : 'Files'}
+                    </button>
+                `;
+            }
+        }
+
+        function setMode(mode) {
+            analysisMode = mode;
+            files = [];
+            render();
+        }
+
+        render();
+    </script>
+</body>
+</html>
